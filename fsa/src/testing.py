@@ -7,6 +7,7 @@
 #
 # *************************************** #
 
+from __future__ import print_function
 import csv
 import json
 from collections import Counter
@@ -19,7 +20,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.metrics import classification_report
 
-from mpl_toolkits.mplot3d import Axes3D
+# from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import rc, markers
 import matplotlib.colors as clrs
@@ -34,6 +35,7 @@ from sklearn.covariance import EllipticEnvelope
 # from train_model import preprocess
 import time
 from preprocessing import preprocess
+from fuzzy_clusters import get_clusters
 
 
 def test(categories):
@@ -60,7 +62,7 @@ def test(categories):
         # print tweet["text"].encode(sys.stdout.encoding, errors='replace')
         # tsv_out.writerow(["hz", tweet["text"].encode("utf-8")])
     for token in count_all.most_common(5):
-        print token[0] + ":" + str(token[1])
+        print(token[0] + ":" + str(token[1]))
     exit()
     tsv_out1.close()
     # exit(0)
@@ -96,7 +98,7 @@ if __name__ == '__main__':
     soft = False
     outliers_fraction = 0.3
 
-    print "INFO: Test word2vec model"
+    print("INFO: Test word2vec model")
     # model = Word2Vec.load("../models/300features_20minwords_10context_full")
     model = Word2Vec.load("../models/300features_40minwords_10context_full")
     # model = Word2Vec.load_word2vec_format('../models/news.model.bin.gz', binary=True)
@@ -107,6 +109,9 @@ if __name__ == '__main__':
     n_components = 2
     pca = PCA(n_components)
     pca_vectors = pca.fit_transform(word_vectors)
+
+    tsne = TSNE(n_components=n_components, learning_rate=0)
+    tsne_vectors = tsne.fit_transform(np.asfarray(word_vectors, dtype='float64'))
 
     num_clusters = 3
     start = time.time()  # Start time
@@ -124,23 +129,26 @@ if __name__ == '__main__':
                                                 maxiter=300,
                                                 init=None)
     cclusters = np.argmax(u, axis=0)
+    get_clusters(u)
     # print clusters, clusters.shape
 
     end = time.time()
     elapsed = end - start
-    print "INFO: Time of clustering: ", elapsed, "seconds"
+    print("INFO: Time of clustering: ", elapsed, "seconds")
 
     jet = cm = plt.get_cmap('jet')
     cNorm = clrs.Normalize(vmin=0, vmax=num_clusters)
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
 
-    for X_transformed, title in [(pca_vectors, "PCA")]:
-        plt.figure()
+    for X_transformed, title in [(pca_vectors, "PCA"), (tsne_vectors, "TSNE")]:
+        fig = plt.figure()
+        fig.canvas.set_window_title(title)
         # ax = fig.add_subplot(111, projection='3d')
         # plt.figure(figsize=(8, 8))
         # plt.scatter(X_transformed[:, 0],
         #             X_transformed[:, 1])
         # print X_transformed.shape
+        print("INFO: Dimensionality reduction method: ", title)
 
         for i, target_name in zip(range(num_clusters), [str(ix) + ' кластер' for ix in range(num_clusters)]):
             cluster_color = scalarMap.to_rgba(i)
@@ -175,7 +183,7 @@ if __name__ == '__main__':
             pred = clf.decision_function(X_transformed[kclusters == i]).ravel()
             threshold = stats.scoreatpercentile(pred,
                                                 100 * outliers_fraction)
-            print threshold
+            print("INFO: Cluster: ", i, " Threshold: ", threshold)
 
             Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
 
