@@ -94,8 +94,8 @@ def test(categories):
 
 
 if __name__ == '__main__':
-    # rc('font', family='Arial')
-    rc('font', family='Ubuntu')
+    rc('font', family='Arial')
+    # rc('font', family='Ubuntu')
 
     soft = False
     outliers_fraction = 0.3
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     tsne = TSNE(n_components=n_components, learning_rate=0)
     tsne_vectors = tsne.fit_transform(np.asfarray(word_vectors, dtype='float64'))
 
-    num_clusters = 3
+    num_clusters = 2
     start = time.time()  # Start time
 
     print('INFO: Clustering: ', num_clusters, ' clusters')
@@ -130,11 +130,13 @@ if __name__ == '__main__':
                                                 error=1e-4,
                                                 maxiter=300,
                                                 init=None)
-    cclusters = np.argmax(u, axis=0)
+    # cclusters = np.argmax(u, axis=0)
     # print(cclusters, cclusters.shape)
-    cclusters_fuzzy = get_clusters(u, limit=1/num_clusters)
+    # cclusters_fuzzy = get_clusters(u, limit=1/num_clusters)
+    cclusters_fuzzy = get_clusters(u, limit=0.35)
     # cl = get_clusters(u, n_components=1)
-    # print(cl, cl.shape)
+    # print(cclusters_fuzzy[-4], cclusters_fuzzy.shape)
+    # exit(0)
 
     end = time.time()
     elapsed = end - start
@@ -145,6 +147,7 @@ if __name__ == '__main__':
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
 
     for X_transformed, title in [(pca_vectors, "PCA"), (tsne_vectors, "TSNE")]:
+        if title == "TSNE": break
         fig = plt.figure()
         fig.canvas.set_window_title(title)
         # ax = fig.add_subplot(111, projection='3d')
@@ -169,8 +172,8 @@ if __name__ == '__main__':
                         )
 
             x, y = find_boundary(X_transformed[kclusters == i, 0],
-                                 X_transformed[kclusters == i, 1], 1)
-            # plt.plot(x, y, '-k', lw=2., color=cluster_color)
+                                 X_transformed[kclusters == i, 1], 5)
+            plt.plot(x, y, '-k', lw=2., color=cluster_color)
 
             # create a mesh to plot in
             h = .02  # step size in the mesh
@@ -178,9 +181,7 @@ if __name__ == '__main__':
             y_min, y_max = X_transformed[kclusters == i, 1].min() - 1, X_transformed[kclusters == i, 1].max() + 1
             xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
                                  np.arange(y_min, y_max, h))
-            # xx, yy = np.meshgrid(
-            #     np.linspace(X_transformed[kclusters == i, 0].min(), X_transformed[kclusters == i, 0].max(), 100),
-            #     np.linspace(X_transformed[kclusters == i, 1].min(), X_transformed[kclusters == i, 1].max(), 100))
+
             clf = EllipticEnvelope(contamination=.1)
             clf.fit(X_transformed[kclusters == i])
 
@@ -192,11 +193,12 @@ if __name__ == '__main__':
             Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
 
             Z = Z.reshape(xx.shape)
-            plt.contour(xx, yy, Z,
-                        levels=[threshold],
-                        linewidths=2,
-                        linestyles='solid',
-                        colors=(cluster_color,))
+            # plt.contour(xx, yy, Z,
+            #             levels=[threshold],
+            #             linewidths=2,
+            #             linestyles='solid',
+            #             colors=(cluster_color,))
+
             # plt.contourf(xx, yy, Z, levels=[threshold, Z.max()],
             #              colors='orange')
             # plt.contourf(xx, yy, Z, levels=[threshold, Z.max()],
@@ -213,15 +215,29 @@ if __name__ == '__main__':
 
             plt.subplot(212)
             plt.title('C-means: ' + str(num_clusters) + ' clusters')
-            plt.scatter(X_transformed[cclusters == i, 0],
-                        X_transformed[cclusters == i, 1],
+
+            cluster_mask = []
+            for cluster_row in cclusters_fuzzy:
+                if i in cluster_row:
+                    cluster_mask.append(True)
+                else:
+                    cluster_mask.append(False)
+
+            cluster_mask = np.asarray(cluster_mask)
+            # print(cluster_mask, cluster_mask.shape)
+
+            plt.scatter(
+                        # X_transformed[cclusters == i, 0],
+                        # X_transformed[cclusters == i, 1],
+                        X_transformed[cluster_mask, 0],
+                        X_transformed[cluster_mask, 1],
                         marker=m,
                         c=cluster_color
                         # ,
                         # label=target_name.decode('utf8')
                         )
-            x, y = find_boundary(X_transformed[cclusters == i, 0],
-                                 X_transformed[cclusters == i, 1], 1)
+            x, y = find_boundary(X_transformed[cluster_mask, 0],
+                                 X_transformed[cluster_mask, 1], 5)
             plt.plot(x, y, '-k', lw=2., color=cluster_color)
 
             # for label, x, y in zip(model.index2word, X_transformed[:, 0], X_transformed[:, 1]):
