@@ -108,25 +108,69 @@ def softVectorizer(train_data, test_data):
 
     return train_centroids, test_centroids
 
-def get_clusters(u):
-    n = 2
-    v = 0.3
-    print("First: ", u[:, 0])
-    print("Last: ", u[:, -1])
+def get_clusters(u, n_components=0, limit=0):
+    """
+    Perform an indirect partition along the given axis using the algorithm
+    specified by the `kind` keyword. It returns an array of indices of the
+    same shape as `a` that index data along the given axis in partitioned
+    order.
 
-    # print("INFO: Max: ", np.argmax(u, axis=0))
+    Parameters
+    ----------
+    u : array_like
+        Dencity matrix.
+    n_components : int or None, optional
+        How many components return for each column.
+    limit : float or None, optional
+        Axis along which to sort.  The default is -1 (the last axis). If None,
+        the flattened array is used.
+
+    Returns
+    -------
+    cluster_array : ndarray, int
+        Array of indices that partition `a` along the specified axis.
+        In other words, ``a[index_array]`` yields a sorted `a`.
+
+    Examples
+    --------
+    One dimensional array:
+
+    >>> x = np.array([3, 4, 2, 1])
+    >>> x[np.argpartition(x, 3)]
+    array([2, 1, 3, 4])
+    >>> x[np.argpartition(x, (1, 3))]
+    array([1, 2, 3, 4])
+
+    >>> x = [3, 4, 2, 1]
+    >>> np.array(x)[np.argpartition(x, 3)]
+    array([2, 1, 3, 4])
+
+    """
+
+    # print("First: ", u[:, 0])
+    # print("Pre-Last: ", u[:, -2])   
+    # print("Last: ", u[:, -1])
+    cluster_array = np.asarray([])
+
+    if n_components == 0 and limit == 0:
+        return cluster_array
 
     # Get first n clusters with max membership function
-    if n < u.shape[0]:
-        # n_max = np.argpartition(u, -n, 0)[-n:]
-        n_max = np.argpartition(u, -n, 0)[-n:]
+    # If n == 1 then equals to hard clustering
+    if 0 < n_components < u.shape[0]:
+        cluster_array = np.argpartition(u, -n_components, 0)[-n_components:]
+        cluster_array = cluster_array.T
         # print(np.argmax(u, axis=0) == np.amax(two_max, axis=0))
-        print("INFO: N max: ", n_max, n_max.shape)
-        # If n == 1 then equals to hard clustering
-        # print(np.argmax(u, axis=0) == np.amax(n_max, axis=0))
-    if v:
-        v_max = 0
-        np.where(u < v, v_max, -1)
-        print("INFO: V max: ", v_max, v_max.shape)
-    # return n_max
-    exit(0)
+        # print("INFO: N max: ", n_max, n_max.shape)
+
+    # Get clusters according to limit
+    if limit:
+        v_max = np.where(u > limit, 1, 0)
+        # print("INFO: V max: ", v_max, v_max.shape)
+        v_ix = []
+        for column in v_max.T:
+            v_ix.append(np.where(column == 1)[0])
+
+        cluster_array = np.asarray(v_ix)
+
+    return cluster_array

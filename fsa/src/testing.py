@@ -7,7 +7,7 @@
 #
 # *************************************** #
 
-from __future__ import print_function
+from __future__ import print_function, division
 import csv
 import json
 from collections import Counter
@@ -94,7 +94,9 @@ def test(categories):
 
 
 if __name__ == '__main__':
-    rc('font', family='Arial')
+    # rc('font', family='Arial')
+    rc('font', family='Ubuntu')
+
     soft = False
     outliers_fraction = 0.3
 
@@ -129,8 +131,10 @@ if __name__ == '__main__':
                                                 maxiter=300,
                                                 init=None)
     cclusters = np.argmax(u, axis=0)
-    get_clusters(u)
-    # print clusters, clusters.shape
+    # print(cclusters, cclusters.shape)
+    cclusters_fuzzy = get_clusters(u, limit=1/num_clusters)
+    # cl = get_clusters(u, n_components=1)
+    # print(cl, cl.shape)
 
     end = time.time()
     elapsed = end - start
@@ -197,6 +201,15 @@ if __name__ == '__main__':
             #              colors='orange')
             # plt.contourf(xx, yy, Z, levels=[threshold, Z.max()],
             #              colors=cluster_color)
+            # for label, x, y in zip(model.index2word, X_transformed[:, 0], X_transformed[:, 1]):
+            #     plt.annotate(
+            #         label,
+            #         (x, y),
+            #         xytext=(0, 3),
+            #         textcoords = 'offset points', ha = 'left', va = 'bottom'
+            #         # ,
+            #         # family="fantasy"
+            #     )
 
             plt.subplot(212)
             plt.title('C-means: ' + str(num_clusters) + ' clusters')
