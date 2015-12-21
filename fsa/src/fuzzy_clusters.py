@@ -169,7 +169,7 @@ def get_clusters(u, n_components=0, limit=0):
         # print("INFO: V max: ", v_max, v_max.shape)
         v_ix = []
         for column in v_max.T:
-            v_ix.append(np.where(column == 1)[0])
+            v_ix.append(np.sort(np.where(column == 1)[0]))
 
         cluster_array = np.asarray(v_ix)
 
